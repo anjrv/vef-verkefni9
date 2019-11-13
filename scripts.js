@@ -5,7 +5,7 @@ const API_URL = 'https://apis.is/company?name=';
  */
 const program = (() => {
     /**
-     * Define form and create listener
+     * Define form and create listener for form submit
      * @param {} companies 
      */
     function init(companies) {
@@ -34,7 +34,7 @@ const program = (() => {
     }
 
     /**
-     * Function to repeatedly clear workspace
+     * Clear workspace
      * @param {} element 
      */
     function clear(element) {
@@ -44,12 +44,12 @@ const program = (() => {
     }
 
     /**
-     * Message output
+     * Display message to user
      * @param {} msg 
      */
     function output(text) {
         clear(results);
-        results.appendChild(el('p', text));
+        results.appendChild(el('span', text));
       }
 
     /**
@@ -69,19 +69,6 @@ const program = (() => {
         }
 
         return element;
-    }
-
-    /**
-     * Create loading element using constructor
-     */
-    function loading() {
-        const img = document.createElement('img');
-        img.setAttribute('src', 'loading.gif');
-
-        const loading = el('div', img, "Leita að fyrirtækjum...");
-        loading.classList.add("loading");
-
-        return loading;
     }
 
     /**
@@ -124,7 +111,13 @@ const program = (() => {
      */
     function request(company) {
         clear(results);
-        results.appendChild(loading());
+
+        const img = document.createElement('img');
+        img.setAttribute('src', 'loading.gif');
+
+        const loading = el('div', img, "Leita að fyrirtækjum...");
+        loading.classList.add("loading");
+        results.appendChild(loading);
 
         fetch(`${API_URL}${company}`)
             .then(response => {
