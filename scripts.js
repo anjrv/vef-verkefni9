@@ -123,6 +123,7 @@ const program = (() => {
      * @param {*} company name
      */
     function request(company) {
+        clear(results);
         results.appendChild(loading());
 
         fetch(`${API_URL}${company}`)
