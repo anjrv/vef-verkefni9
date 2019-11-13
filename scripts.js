@@ -4,145 +4,138 @@ const API_URL = 'https://apis.is/company?name=';
  * Leit að fyrirtækjum á Íslandi gegnum apis.is
  */
 const program = (() => {
-    /**
-     * Define form and create listener for form submit
-     * @param {} companies 
-     */
-    function init(companies) {
-        const form = document.querySelector('form');
+  let input;
+  let results;
 
-        input = form.querySelector('input');
-        results = document.querySelector('.results');
-
-        form.addEventListener('submit', submit);
+  /**
+   * Clear workspace
+   * @param {} element
+   */
+  function clear(element) {
+    while (element.firstChild) {
+      element.removeChild(element.firstChild);
     }
+  }
 
-    /**
-     * Handle form submit
-     * @param {*} e 
-     */
-    function submit(e) {
-        e.preventDefault();
+  /**
+   * Element constructor
+   * @param {} name of element
+   * @param  {...any} children of element
+   */
+  function el(name, ...children) {
+    const element = document.createElement(name);
 
-        const company = input.value;
-
-        if (typeof company !== 'string' || company === '') {
-            output("Fyrirtæki verður að vera strengur");
-        } else {
-            request(company);
-        }
-    }
-
-    /**
-     * Clear workspace
-     * @param {} element 
-     */
-    function clear(element) {
-        while (element.firstChild) {
-          element.removeChild(element.firstChild);
-        }
-    }
-
-    /**
-     * Display message to user
-     * @param {} msg 
-     */
-    function output(text) {
-        clear(results);
-        results.appendChild(el('span', text));
+    for (let child of children) { /* eslint-disable-line */
+      if (typeof child === 'string') {
+        element.appendChild(document.createTextNode(child));
+      } else if (child) {
+        element.appendChild(child);
       }
-
-    /**
-     * Element constructor
-     * @param {} name of element
-     * @param  {...any} children of element
-     */
-    function el(name, ...children) {
-        const element = document.createElement(name);
-
-        for (let child of children) {
-            if (typeof child === 'string') {
-                element.appendChild(document.createTextNode(child));
-            } else if (child) {
-                element.appendChild(child);
-            }
-        }
-
-        return element;
     }
 
-    /**
-     * Creates elements for fetch results if they exist
-     * Displays created elements
-     */
-    function display(item) {
+    return element;
+  }
+
+  /**
+   * Display message to user
+   * @param {} text
+   */
+  function output(text) {
+    clear(results);
+    results.appendChild(el('span', text));
+  }
+
+  /**
+   * Creates elements for fetch results if they exist
+   * Displays created elements
+   */
+  function display(item) {
+    clear(results);
+
+    if (item.length === 0) {
+      output('Ekkert fyrirtæki fannst fyrir leitarstreng');
+    }
+
+    for (let i in item) { /* eslint-disable-line */
+      const component = el('dl',
+        el('dt', 'Nafn'),
+        el('dd', item[i].name),
+        el('dt', 'Kennitala'),
+        el('dd', item[i].sn),
+        item[i].active ? el('dt', 'Heimilsfang') : null,
+        item[i].active ? el('dd', item[i].address) : null);
+
+      const result = el('div', component);
+      if (item[i].active === 1) result.className = 'company company--active';
+      else result.className = 'company company--inactive';
+
+      results.appendChild(result);
+    }
+  }
+
+  /**
+   * Fetch JSON
+   * @param {*} company name
+   */
+  function request(company) {
+    clear(results);
+
+    const img = document.createElement('img');
+    img.setAttribute('src', 'loading.gif');
+
+    const loading = el('div', img, 'Leita að fyrirtækjum...');
+    loading.classList.add('loading');
+    results.appendChild(loading);
+
+    fetch(`${API_URL}${company}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Síðan er ekki aðgengileg þessa stundina');
+        }
         clear(results);
+        return response.json();
+      })
+      .then((data) => display(data.results))
+      .catch((error) => {
+        console.error('Villa við að sækja gögn', error);
+        output('Villa við að sækja gögn');
+      });
+  }
 
-        if (item.length === 0) {
-            output("Ekkert fyrirtæki fannst fyrir leitarstreng")
-        }
+  /**
+   * Handle form submit
+   * @param {*} e
+   */
+  function submit(e) {
+    e.preventDefault();
 
-        for (i in item) {
-            var name = item[i].name;
-            var sn = item[i].sn;
-            var active = item[i].active;
-            var address = item[i].address;
+    const company = input.value;
 
-            var component = el('dl',
-                el('dt', 'Nafn'),
-                el('dd', name),
-                el('dt', 'Kennitala'),
-                el('dd', sn),
-                active ? el('dt', 'Heimilsfang') : null,
-                active ? el('dd', address) : null,
-            );
-
-            var result = el('div', component);
-            if (active === 1) result.className = "company company--active";
-            else result.className = "company company--inactive";
-
-            results.appendChild(result);
-        }
+    if (typeof company !== 'string' || company === '') {
+      output('Fyrirtæki verður að vera strengur');
+    } else {
+      request(company);
     }
+  }
 
-    /**
-     * Fetch JSON
-     * @param {*} company name
-     */
-    function request(company) {
-        clear(results);
+  /**
+   * Define form and create listener
+   */
+  function init() {
+    const form = document.querySelector('form');
 
-        const img = document.createElement('img');
-        img.setAttribute('src', 'loading.gif');
+    input = form.querySelector('input');
+    results = document.querySelector('.results');
 
-        const loading = el('div', img, "Leita að fyrirtækjum...");
-        loading.classList.add("loading");
-        results.appendChild(loading);
+    form.addEventListener('submit', submit);
+  }
 
-        fetch(`${API_URL}${company}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Síðan er ekki aðgengileg þessa stundina");
-                }
-                clear(results);
-                return response.json()
-            })
-            .then(data => {
-                display(data.results);
-                console.log(data);
-            })
-            .catch(error => {
-                console.error("Villa við að sækja gögn", error);
-                output("Villa við að sækja gögn");
-            })
-    }
-
-    return {
-        init,
-    };
+  return {
+    init,
+  };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-    const companies = document.querySelector('.companies');
-    program.init(companies);
+  const companies = document.querySelector('.companies');
+  program.init(companies);
 });
